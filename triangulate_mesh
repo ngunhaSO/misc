@@ -1,0 +1,42 @@
+import vtk
+
+reader = vtk.vtkOBJReader()
+reader.SetFileName('data/3D_data/demoparts/test.obj')
+reader.Update()
+
+triangle = vtk.vtkTriangleFilter()
+triangle.SetInputConnection(reader.GetOutputPort())
+surface = triangle.GetOutputPort()
+
+normals = vtk.vtkPolyDataNormals()
+normals.SetAutoOrientNormals(False)
+normals.SetFlipNormals(False)
+normals.SetSplitting(False)
+normals.SetFeatureAngle(30.0)
+normals.ConsistencyOn()
+normals.SetInputConnection(surface)
+surface = normals.GetOutputPort()
+
+fillHoles = vtk.vtkFillHolesFilter()
+fillHoles.SetHoleSize(1000.0)
+fillHoles.SetInputConnection(surface)
+surface = fillHoles.GetOutputPort()
+
+smoother = vtk.vtkWindowedSincPolyDataFilter()
+smoother.SetInputConnection(fillHoles.GetOutputPort())
+smoother.SetNumberOfIterations(11)
+smoother.BoundarySmoothingOff()
+smoother.FeatureEdgeSmoothingOff()
+smoother.SetFeatureAngle(500.0)
+smoother.SetPassBand(.001)
+smoother.NonManifoldSmoothingOn()
+smoother.NormalizeCoordinatesOn()
+surface = smoother.GetOutputPort()
+
+print('write')
+writer = vtk.vtkSTLWriter()
+writer.SetFileTypeToBinary()
+writer.SetInputConnection(surface)
+writer.SetFileName('data/3D_data/demoparts/test.stl')
+writer.Update()
+writer.Write()
